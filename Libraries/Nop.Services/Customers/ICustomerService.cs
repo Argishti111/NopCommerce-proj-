@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nop.Core;
+using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
@@ -638,6 +639,24 @@ namespace Nop.Services.Customers
         /// <param name="address">Address</param>
         /// <returns>A task that represents the asynchronous operation</returns>
         Task InsertCustomerAddressAsync(Customer customer, Address address);
+
+        #endregion
+
+        #region Customer product mapping
+
+        /// <summary>
+        /// Gets product customer mapping collection
+        /// </summary>
+        /// <param name="customerId">Customer identifier</param>
+        /// <param name="pageIndex">Page index</param>
+        /// <param name="pageSize">Page size</param>
+        /// <param name="showHidden">A value indicating whether to show hidden records</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the product a category mapping collection
+        /// </returns>
+        Task<IPagedList<Product>> GetProductCustomerByCustomerIdAsync(int customerId,
+            int pageIndex = 0, int pageSize = int.MaxValue, bool showHidden = false);
 
         #endregion
     }

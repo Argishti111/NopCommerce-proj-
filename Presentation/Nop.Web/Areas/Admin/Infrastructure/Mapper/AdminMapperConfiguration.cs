@@ -430,6 +430,7 @@ namespace Nop.Web.Areas.Admin.Infrastructure.Mapper
 
             CreateMap<ProductCategory, CategoryProductModel>()
                 .ForMember(model => model.ProductName, options => options.Ignore());
+            CreateMap<Product, CustomerProductModel>();
             CreateMap<CategoryProductModel, ProductCategory>()
                 .ForMember(entity => entity.CategoryId, options => options.Ignore())
                 .ForMember(entity => entity.ProductId, options => options.Ignore());

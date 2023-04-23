@@ -823,6 +823,7 @@ namespace Nop.Services.Catalog
         /// <param name="orderBy">Order by</param>
         /// <param name="showHidden">A value indicating whether to show hidden records</param>
         /// <param name="overridePublished">
+        /// <param name="customerId">
         /// null - process "Published" property according to "showHidden" parameter
         /// true - load only "Published" products
         /// false - load only "Unpublished" products
@@ -854,7 +855,8 @@ namespace Nop.Services.Catalog
             IList<SpecificationAttributeOption> filteredSpecOptions = null,
             ProductSortingEnum orderBy = ProductSortingEnum.Position,
             bool showHidden = false,
-            bool? overridePublished = null)
+            bool? overridePublished = null,
+            int customerId = 0)
         {
             //some databases don't support int.MaxValue
             if (pageSize == int.MaxValue)
@@ -890,6 +892,7 @@ namespace Nop.Services.Catalog
                         )
                     ) &&
                     (productType == null || p.ProductTypeId == (int)productType) &&
+                    (customerId == 0 || p.CustomerId == null) &&
                     (showHidden ||
                             DateTime.UtcNow >= (p.AvailableStartDateTimeUtc ?? DateTime.MinValue) &&
                             DateTime.UtcNow <= (p.AvailableEndDateTimeUtc ?? DateTime.MaxValue)

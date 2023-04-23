@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -16,6 +17,7 @@ using Nop.Core.Domain.Gdpr;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Tax;
 using Nop.Core.Events;
+using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Customers;
 using Nop.Services.ExportImport;
@@ -31,6 +33,7 @@ using Nop.Services.Stores;
 using Nop.Services.Tax;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Areas.Admin.Infrastructure.Mapper.Extensions;
+using Nop.Web.Areas.Admin.Models.Catalog;
 using Nop.Web.Areas.Admin.Models.Customers;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc;
@@ -66,6 +69,7 @@ namespace Nop.Web.Areas.Admin.Controllers
         private readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
         private readonly INotificationService _notificationService;
         private readonly IPermissionService _permissionService;
+        private readonly IProductService _productService;
         private readonly IQueuedEmailService _queuedEmailService;
         private readonly IRewardPointService _rewardPointService;
         private readonly IStoreContext _storeContext;
@@ -103,6 +107,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             INewsLetterSubscriptionService newsLetterSubscriptionService,
             INotificationService notificationService,
             IPermissionService permissionService,
+            IProductService productService,
             IQueuedEmailService queuedEmailService,
             IRewardPointService rewardPointService,
             IStoreContext storeContext,
@@ -136,6 +141,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             _newsLetterSubscriptionService = newsLetterSubscriptionService;
             _notificationService = notificationService;
             _permissionService = permissionService;
+            _productService= productService;
             _queuedEmailService = queuedEmailService;
             _rewardPointService = rewardPointService;
             _storeContext = storeContext;
@@ -1720,6 +1726,118 @@ namespace Nop.Web.Areas.Admin.Controllers
                 await _notificationService.ErrorNotificationAsync(exc);
                 return RedirectToAction("List");
             }
+        }
+
+        #endregion
+
+        #region Products
+
+        [HttpPost]
+        public virtual async Task<IActionResult> ProductList(CustomerProductSearchModel searchModel)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCategories))
+                return await AccessDeniedDataTablesJson();
+
+            //try to get a customer with the specified id
+            var customer = await _customerService.GetCustomerByIdAsync(searchModel.CustomerId)
+                ?? throw new ArgumentException("No customer found with the specified id");
+
+            //prepare model
+            
+            var model = await _customerModelFactory.PrepareCustomerProductListModelAsync(searchModel, customer);
+
+            return Json(model);
+
+
+        }
+
+        public virtual async Task<IActionResult> ProductUpdate(CustomerProductModel model)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCategories))
+                return AccessDeniedView();
+
+            //try to get a product with the specified id
+            var product = await _productService.GetProductByIdAsync(model.Id)
+                ?? throw new ArgumentException("No product found with the specified id");
+
+            //fill entity from product
+            product.DisplayOrder = model.DisplayOrder;
+
+            await _productService.UpdateProductAsync(product);
+
+            return new NullJsonResult();
+        }
+
+        public virtual async Task<IActionResult> ProductDelete(int id)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCategories))
+                return AccessDeniedView();
+
+            //try to get a product with the specified id
+            var product = await _productService.GetProductByIdAsync(id)
+                ?? throw new ArgumentException("No product found with the specified id");
+
+            //fill entity from product
+            product.CustomerId = null;
+
+            await _productService.UpdateProductAsync(product);
+
+            return new NullJsonResult();
+        }
+
+        public virtual async Task<IActionResult> ProductAddPopup(int customerId)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCategories))
+                return AccessDeniedView();
+
+
+
+            //prepare model
+            var model = await _customerModelFactory.PrepareAddProductToCustomerSearchModelAsync(new AddProductToCustomerSearchModel() { SearchCustomerId = customerId });
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public virtual async Task<IActionResult> ProductAddPopupList(AddProductToCustomerSearchModel searchModel)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCategories))
+                return await AccessDeniedDataTablesJson();
+
+            //prepare model
+            var model = await _customerModelFactory.PrepareAddProductToCustomerListModelAsync(searchModel);
+
+            return Json(model);
+        }
+
+        [HttpPost]
+        [FormValueRequired("save")]
+        public virtual async Task<IActionResult> ProductAddPopup(AddProductToCustomerModel model)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCategories))
+                return AccessDeniedView();
+
+            //get selected products
+            var selectedProducts = await _productService.GetProductsByIdsAsync(model.SelectedProductIds.ToArray());
+            if (selectedProducts.Any())
+            {
+                var existingProductCustomers = await _customerService.GetProductCustomerByCustomerIdAsync(model.CustomerId, showHidden: true);
+                foreach (var product in selectedProducts)
+                {
+                    //whether product customer with such parameters already exists
+                    //if (_categoryService.FindProductCategory(existingProductCategories, product.Id, model.CategoryId) != null)
+                    //    continue;
+
+                    product.CustomerId = model.CustomerId;
+
+                    //update the product with new customer
+                    await _productService.UpdateProductAsync(product);
+                }
+            }
+
+            ViewBag.RefreshPage = true;
+
+            return View(new AddProductToCustomerSearchModel());
         }
 
         #endregion

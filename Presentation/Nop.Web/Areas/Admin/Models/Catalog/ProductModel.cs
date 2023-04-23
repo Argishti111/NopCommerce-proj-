@@ -51,6 +51,9 @@ namespace Nop.Web.Areas.Admin.Models.Catalog
             SelectedCustomerRoleIds = new List<int>();
             AvailableCustomerRoles = new List<SelectListItem>();
 
+            SelectedCustomerIds = new List<int>();
+            AvailableCustomers = new List<SelectListItem>();
+
             SelectedDiscountIds = new List<int>();
             AvailableDiscounts = new List<SelectListItem>();
 
@@ -398,6 +401,11 @@ namespace Nop.Web.Areas.Admin.Models.Catalog
         [NopResourceDisplayName("Admin.Catalog.Products.Fields.AclCustomerRoles")]
         public IList<int> SelectedCustomerRoleIds { get; set; }
         public IList<SelectListItem> AvailableCustomerRoles { get; set; }
+
+        //(customers)
+        [NopResourceDisplayName("Admin.Catalog.Products.Fields.Customers")]
+        public IList<int> SelectedCustomerIds { get; set; }
+        public IList<SelectListItem> AvailableCustomers { get; set; }
 
         //store mapping
         [NopResourceDisplayName("Admin.Catalog.Products.Fields.LimitedToStores")]

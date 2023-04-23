@@ -75,6 +75,11 @@
         public static string CheckoutShippingAddressTop => "checkout_shipping_address_top";
         public static string CheckoutShippingMethodBottom => "checkout_shipping_method_bottom";
         public static string CheckoutShippingMethodTop => "checkout_shipping_method_top";
+        public static string CheckoutReturnShippingAddressBottom => "checkout_return_shipping_address_bottom";
+        public static string CheckoutReturnShippingAddressMiddle => "checkout_return_shipping_address_middle";
+        public static string CheckoutReturnShippingAddressTop => "checkout_return_shipping_address_top";
+        public static string CheckoutReturnShippingMethodBottom => "checkout_return_shipping_method_bottom";
+        public static string CheckoutReturnShippingMethodTop => "checkout_return_shipping_method_top";
         public static string ContactUsBottom => "contactus_bottom";
         public static string ContactUsTop => "contactus_top";
         public static string ContactVendorBottom => "contactvendor_bottom";
@@ -140,6 +145,11 @@
         public static string OpCheckoutShippingAddressTop => "op_checkout_shipping_address_top";
         public static string OpCheckoutShippingMethodBottom => "op_checkout_shipping_method_bottom";
         public static string OpCheckoutShippingMethodTop => "op_checkout_shipping_method_top";
+        public static string OpCheckoutReturnShippingAddressBottom => "op_checkout_return_shipping_address_bottom";
+        public static string OpCheckoutReturnShippingAddressMiddle => "op_checkout_return_shipping_address_middle";
+        public static string OpCheckoutReturnShippingAddressTop => "op_checkout_return_shipping_address_top";
+        public static string OpCheckoutReturnShippingMethodBottom => "op_checkout_return_shipping_method_bottom";
+        public static string OpCheckoutReturnShippingMethodTop => "op_checkout_return_shipping_method_top";
         public static string OrderDetailsBillingAddress => "order_details_billing_address";
         public static string OrderDetailsPageAfterproducts => "orderdetails_page_afterproducts";
         public static string OrderDetailsPageBeforeproducts => "orderdetails_page_beforeproducts";
@@ -148,6 +158,7 @@
         public static string OrderDetailsPageTop => "orderdetails_page_top";
         public static string OrderDetailsProductLine => "orderdetails_product_line";
         public static string OrderDetailsShippingAddress => "order_details_shipping_address";
+        public static string OrderDetailsReturnShippingAddress => "order_details_return_shipping_address";
         public static string OrderSummaryBillingAddress => "order_summary_billing_address";
         public static string OrderSummaryCartFooter => "order_summary_cart_footer";
         public static string OrderSummaryContentAfter => "order_summary_content_after";
@@ -156,6 +167,8 @@
         public static string OrderSummaryPaymentMethodInfo => "order_summary_payment_method_info";
         public static string OrderSummaryShippingAddress => "order_summary_shipping_address";
         public static string OrderSummaryShippingMethodInfo => "order_summary_shipping_method_info";
+        public static string OrderSummaryReturnShippingAddress => "order_summary_return_shipping_address";
+        public static string OrderSummaryReturnShippingMethodInfo => "order_summary_return_shipping_method_info";
         public static string OrderSummaryTotals => "order_summary_totals";
         public static string ProductBoxAddinfoAfter => "productbox_addinfo_after";
         public static string ProductBoxAddinfoBefore => "productbox_addinfo_before";

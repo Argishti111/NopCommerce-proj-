@@ -488,6 +488,50 @@
             <span asp-validation-for="VisibleIndividually"></span>
         </div>
     </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <nop-label asp-for="SelectedCustomerIds" />
+        </div>
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-4"  onclick="checkSelected(this)" >
+                    <nop-select asp-for="SelectedCustomerIds" asp-items="Model.AvailableCustomers" asp-multiple="true"/>
+                    <script>
+                    function checkSelected(elem){
+                            console.log(document.getElementById("SelectedCustomerIds_taglist").children.length > 1)
+                            if (document.getElementById("SelectedCustomerIds_taglist").children.length > 1){
+                                document.getElementById("SelectedCustomerIds_taglist").children[0].remove();
+                            }
+                    }
+                    $(document).ready(function() {
+                        var rolesIdsInput = $('#@Html.IdFor(model => model.SelectedCustomerIds)')
+                            .data("kendoMultiSelect");
+
+                        rolesIdsInput.setOptions({
+                            autoClose: true,
+                            filter: "contains"
+                        });
+
+                        @if (Model.AvailableCustomers.Count == 0)
+                        {
+                            <text>
+                                rolesIdsInput.setOptions({
+                                    enable: false,
+                                    placeholder: 'No customers available'
+                                });
+                                rolesIdsInput._placeholder();
+                                rolesIdsInput._enable();
+                            </text>
+                        }
+                    });
+                    </script>
+                </div>
+                <div class="col-md-8">
+                    @await Component.InvokeAsync(typeof(AclDisabledWarningViewComponent))
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="form-group row @(Model.ProductEditorSettingsModel.ACL ? null : "advanced-setting")">
         <div class="col-md-3">
             <nop-label asp-for="SelectedCustomerRoleIds" />

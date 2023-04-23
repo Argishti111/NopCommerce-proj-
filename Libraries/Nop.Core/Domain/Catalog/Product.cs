@@ -19,6 +19,11 @@ namespace Nop.Core.Domain.Catalog
         public int ProductTypeId { get; set; }
 
         /// <summary>
+        /// Gets or sets the customer identifier
+        /// </summary>
+        public int? CustomerId { get; set; }
+
+        /// <summary>
         /// Gets or sets the parent product identifier. It's used to identify associated products (only with "grouped" products)
         /// </summary>
         public int ParentGroupedProductId { get; set; }

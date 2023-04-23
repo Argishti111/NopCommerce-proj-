@@ -539,6 +539,31 @@ namespace Nop.Web.Controllers
         }
 
         /// <summary>
+        /// Delete edited address
+        /// </summary>
+        /// <param name="addressId"></param>
+        /// <param name="opc"></param>
+        public virtual async Task<IActionResult> DeleteEditReturnShippingAddress(int addressId, bool opc = false)
+        {
+            return await DeleteAddressAsync(addressId, async (cart) =>
+            {
+                if (!opc)
+                    return Json(new { redirect = Url.RouteUrl("CheckoutReturnShippingAddress") });
+
+                var shippingAddressModel = await _checkoutModelFactory.PrepareShippingAddressModelAsync(cart);
+
+                return Json(new
+                {
+                    update_section = new UpdateSectionJsonModel
+                    {
+                        name = "shipping",
+                        html = await RenderPartialViewToStringAsync("OpcReturnShippingAddress", shippingAddressModel)
+                    }
+                });
+            });
+        }
+
+        /// <summary>
         /// Save edited address
         /// </summary>
         /// <param name="model"></param>
@@ -569,7 +594,39 @@ namespace Nop.Web.Controllers
                 });
             });
         }
-        
+
+        /// <summary>
+        /// Save edited address
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="opc"></param>
+        /// <returns></returns>
+        public virtual async Task<IActionResult> SaveEditReturnShippingAddress(CheckoutShippingAddressModel model, IFormCollection form, bool opc = false)
+        {
+            return await EditAddressAsync(model.ShippingNewAddress, form, async (customer, cart, address) =>
+            {
+                customer.ReturnShippingAddressId = address.Id;
+                await _customerService.UpdateCustomerAsync(customer);
+
+                if (!opc)
+                    return Json(new
+                    {
+                        redirect = Url.RouteUrl("CheckoutReturnShippingAddress")
+                    });
+
+                var shippingAddressModel = await _checkoutModelFactory.PrepareShippingAddressModelAsync(cart, address.CountryId);
+                return Json(new
+                {
+                    selected_id = model.ShippingNewAddress.Id,
+                    update_section = new UpdateSectionJsonModel
+                    {
+                        name = "shipping",
+                        html = await RenderPartialViewToStringAsync("OpcReturnShippingAddress", shippingAddressModel)
+                    }
+                });
+            });
+        }
+
         #endregion
 
         #region Methods (multistep checkout)
@@ -769,6 +826,33 @@ namespace Nop.Web.Controllers
             return View(model);
         }
 
+        public virtual async Task<IActionResult> ReturnShippingAddress()
+        {
+            //validation
+            if (_orderSettings.CheckoutDisabled)
+                return RedirectToRoute("ReturnShoppingCart");
+
+            var customer = await _workContext.GetCurrentCustomerAsync();
+            var store = await _storeContext.GetCurrentStoreAsync();
+            var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
+
+            if (!cart.Any())
+                return RedirectToRoute("ReturnShoppingCart");
+
+            if (_orderSettings.OnePageCheckoutEnabled)
+                return RedirectToRoute("CheckoutOnePage");
+
+            if (await _customerService.IsGuestAsync(customer) && !_orderSettings.AnonymousCheckoutAllowed)
+                return Challenge();
+
+            if (!await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart))
+                return RedirectToRoute("CheckoutReturnShippingMethod");
+
+            //model
+            var model = await _checkoutModelFactory.PrepareShippingAddressModelAsync(cart, prePopulateNewAddressWithCustomerFields: true);
+            return View(model);
+        }
+
         public virtual async Task<IActionResult> SelectShippingAddress(int addressId)
         {
             //validation
@@ -792,6 +876,31 @@ namespace Nop.Web.Controllers
             }
 
             return RedirectToRoute("CheckoutShippingMethod");
+        }
+
+        public virtual async Task<IActionResult> SelectReturnShippingAddress(int addressId)
+        {
+            //validation
+            if (_orderSettings.CheckoutDisabled)
+                return RedirectToRoute("ShoppingCart");
+
+            var customer = await _workContext.GetCurrentCustomerAsync();
+            var address = await _customerService.GetCustomerAddressAsync(customer.Id, addressId);
+
+            if (address == null)
+                return RedirectToRoute("CheckoutReturnShippingAddress");
+
+            customer.ReturnShippingAddressId = address.Id;
+            await _customerService.UpdateCustomerAsync(customer);
+
+            if (_shippingSettings.AllowPickupInStore)
+            {
+                var store = await _storeContext.GetCurrentStoreAsync();
+                //set value indicating that "pick up in store" option has not been chosen
+                await _genericAttributeService.SaveAttributeAsync<PickupPoint>(customer, NopCustomerDefaults.SelectedPickupPointAttribute, null, store.Id);
+            }
+
+            return RedirectToRoute("CheckoutReturnShippingMethod");
         }
 
         [HttpPost, ActionName("ShippingAddress")]
@@ -884,6 +993,96 @@ namespace Nop.Web.Controllers
             return View(model);
         }
 
+        [HttpPost, ActionName("ReturnShippingAddress")]
+        [FormValueRequired("nextstep")]
+        public virtual async Task<IActionResult> NewReturnShippingAddress(CheckoutShippingAddressModel model, IFormCollection form)
+        {
+            //validation
+            if (_orderSettings.CheckoutDisabled)
+                return RedirectToRoute("ShoppingCart");
+
+            var customer = await _workContext.GetCurrentCustomerAsync();
+            var store = await _storeContext.GetCurrentStoreAsync();
+            var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
+
+            if (!cart.Any())
+                return RedirectToRoute("ShoppingCart");
+
+            if (_orderSettings.OnePageCheckoutEnabled)
+                return RedirectToRoute("CheckoutOnePage");
+
+            if (await _customerService.IsGuestAsync(customer) && !_orderSettings.AnonymousCheckoutAllowed)
+                return Challenge();
+
+            if (!await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart))
+                return RedirectToRoute("CheckoutPaymentInfo");
+
+            //pickup point
+            if (_shippingSettings.AllowPickupInStore && !_orderSettings.DisplayPickupInStoreOnShippingMethodPage)
+            {
+                var pickupInStore = ParsePickupInStore(form);
+                if (pickupInStore)
+                {
+                    var pickupOption = await ParsePickupOptionAsync(cart, form);
+                    await SavePickupOptionAsync(pickupOption);
+
+                    return RedirectToRoute("CheckoutPaymentMethod");
+                }
+
+                //set value indicating that "pick up in store" option has not been chosen
+                await _genericAttributeService.SaveAttributeAsync<PickupPoint>(customer, NopCustomerDefaults.SelectedPickupPointAttribute, null, store.Id);
+            }
+
+            //custom address attributes
+            var customAttributes = await _addressAttributeParser.ParseCustomAddressAttributesAsync(form);
+            var customAttributeWarnings = await _addressAttributeParser.GetAttributeWarningsAsync(customAttributes);
+            foreach (var error in customAttributeWarnings)
+            {
+                ModelState.AddModelError("", error);
+            }
+
+            var newAddress = model.ShippingNewAddress;
+
+            if (ModelState.IsValid)
+            {
+                //try to find an address with the same values (don't duplicate records)
+                var address = _addressService.FindAddress((await _customerService.GetAddressesByCustomerIdAsync(customer.Id)).ToList(),
+                    newAddress.FirstName, newAddress.LastName, newAddress.PhoneNumber,
+                    newAddress.Email, newAddress.FaxNumber, newAddress.Company,
+                    newAddress.Address1, newAddress.Address2, newAddress.City,
+                    newAddress.County, newAddress.StateProvinceId, newAddress.ZipPostalCode,
+                    newAddress.CountryId, customAttributes);
+
+                if (address == null)
+                {
+                    address = newAddress.ToEntity();
+                    address.CustomAttributes = customAttributes;
+                    address.CreatedOnUtc = DateTime.UtcNow;
+                    //some validation
+                    if (address.CountryId == 0)
+                        address.CountryId = null;
+                    if (address.StateProvinceId == 0)
+                        address.StateProvinceId = null;
+
+                    await _addressService.InsertAddressAsync(address);
+
+                    await _customerService.InsertCustomerAddressAsync(customer, address);
+
+                }
+
+                customer.ReturnShippingAddressId = address.Id;
+                await _customerService.UpdateCustomerAsync(customer);
+
+                return RedirectToRoute("CheckoutPaymentInfo");
+            }
+
+            //If we got this far, something failed, redisplay form
+            model = await _checkoutModelFactory.PrepareShippingAddressModelAsync(cart,
+                selectedCountryId: newAddress.CountryId,
+                overrideAttributesXml: customAttributes);
+            return View(model);
+        }
+
         public virtual async Task<IActionResult> ShippingMethod()
         {
             //validation
@@ -961,7 +1160,7 @@ namespace Nop.Web.Controllers
             {
                 await _genericAttributeService.SaveAttributeAsync<ShippingOption>(customer,
                     NopCustomerDefaults.SelectedShippingOptionAttribute, null, store.Id);
-                return RedirectToRoute("CheckoutPaymentMethod");
+                return RedirectToRoute("CheckoutReturnShippingAddress");
             }
 
             //pickup point
@@ -973,7 +1172,7 @@ namespace Nop.Web.Controllers
                     var pickupOption = await ParsePickupOptionAsync(cart, form);
                     await SavePickupOptionAsync(pickupOption);
 
-                    return RedirectToRoute("CheckoutPaymentMethod");
+                    return RedirectToRoute("CheckoutReturnShippingAddress");
                 }
 
                 //set value indicating that "pick up in store" option has not been chosen
@@ -1014,7 +1213,7 @@ namespace Nop.Web.Controllers
             //save
             await _genericAttributeService.SaveAttributeAsync(customer, NopCustomerDefaults.SelectedShippingOptionAttribute, shippingOption, store.Id);
 
-            return RedirectToRoute("CheckoutPaymentMethod");
+            return RedirectToRoute("CheckoutReturnShippingAddress");
         }
 
         public virtual async Task<IActionResult> PaymentMethod()
@@ -1043,7 +1242,7 @@ namespace Nop.Web.Controllers
             {
                 await _genericAttributeService.SaveAttributeAsync<string>(customer,
                     NopCustomerDefaults.SelectedPaymentMethodAttribute, null, store.Id);
-                return RedirectToRoute("CheckoutPaymentInfo");
+                return RedirectToRoute("CheckoutReturnShippingAddress");
             }
 
             //filter by country
@@ -1378,6 +1577,21 @@ namespace Nop.Web.Controllers
         }
 
         protected virtual async Task<JsonResult> OpcLoadStepAfterShippingMethod(IList<ShoppingCartItem> cart)
+        {
+            var shippingAddressModel = await _checkoutModelFactory.PrepareShippingAddressModelAsync(cart, prePopulateNewAddressWithCustomerFields: true);
+
+            return Json(new
+            {
+                update_section = new UpdateSectionJsonModel
+                {
+                    name = "return-shipping",
+                    html = await RenderPartialViewToStringAsync("OpcReturnShippingAddress", shippingAddressModel)
+                },
+                goto_section = "return-shipping"
+            });
+        }
+
+        protected virtual async Task<JsonResult> OpcLoadStepAfterReturnShippingAddress(IList<ShoppingCartItem> cart)
         {
             //Check whether payment workflow is required
             //we ignore reward points during cart total calculation
@@ -1845,6 +2059,122 @@ namespace Nop.Web.Controllers
 
                 //load next step
                 return await OpcLoadStepAfterShippingMethod(cart);
+            }
+            catch (Exception exc)
+            {
+                await _logger.WarningAsync(exc.Message, exc, await _workContext.GetCurrentCustomerAsync());
+                return Json(new { error = 1, message = exc.Message });
+            }
+        }
+
+        [HttpPost]
+        public virtual async Task<IActionResult> OpcSaveReturnShipping(CheckoutShippingAddressModel model, IFormCollection form)
+        {
+            try
+            {
+                //validation
+                if (_orderSettings.CheckoutDisabled)
+                    throw new Exception(await _localizationService.GetResourceAsync("Checkout.Disabled"));
+
+                var customer = await _workContext.GetCurrentCustomerAsync();
+                var store = await _storeContext.GetCurrentStoreAsync();
+                var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
+
+                if (!cart.Any())
+                    throw new Exception("Your cart is empty");
+
+                if (!_orderSettings.OnePageCheckoutEnabled)
+                    throw new Exception("One page checkout is disabled");
+
+                if (await _customerService.IsGuestAsync(customer) && !_orderSettings.AnonymousCheckoutAllowed)
+                    throw new Exception("Anonymous checkout is not allowed");
+
+                if (!await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart))
+                    throw new Exception("Shipping is not required");
+
+                //pickup point
+                if (_shippingSettings.AllowPickupInStore && !_orderSettings.DisplayPickupInStoreOnShippingMethodPage)
+                {
+                    var pickupInStore = ParsePickupInStore(form);
+                    if (pickupInStore)
+                    {
+                        var pickupOption = await ParsePickupOptionAsync(cart, form);
+                        await SavePickupOptionAsync(pickupOption);
+
+                        return await OpcLoadStepAfterReturnShippingAddress(cart);
+                    }
+
+                    //set value indicating that "pick up in store" option has not been chosen
+                    await _genericAttributeService.SaveAttributeAsync<PickupPoint>(customer, NopCustomerDefaults.SelectedPickupPointAttribute, null, store.Id);
+                }
+
+                _ = int.TryParse(form["return_shipping_address_id"], out var shippingAddressId);
+
+                if (shippingAddressId > 0)
+                {
+                    //existing address
+                    var address = await _customerService.GetCustomerAddressAsync(customer.Id, shippingAddressId)
+                        ?? throw new Exception(await _localizationService.GetResourceAsync("Checkout.Address.NotFound"));
+
+                    customer.ReturnShippingAddressId = address.Id;
+                    await _customerService.UpdateCustomerAsync(customer);
+                }
+                else
+                {
+                    //new address
+                    var newAddress = model.ShippingNewAddress;
+
+                    //custom address attributes
+                    var customAttributes = await _addressAttributeParser.ParseCustomAddressAttributesAsync(form);
+                    var customAttributeWarnings = await _addressAttributeParser.GetAttributeWarningsAsync(customAttributes);
+                    foreach (var error in customAttributeWarnings)
+                    {
+                        ModelState.AddModelError("", error);
+                    }
+
+                    //validate model
+                    if (!ModelState.IsValid)
+                    {
+                        //model is not valid. redisplay the form with errors
+                        var shippingAddressModel = await _checkoutModelFactory.PrepareShippingAddressModelAsync(cart,
+                            selectedCountryId: newAddress.CountryId,
+                            overrideAttributesXml: customAttributes);
+                        shippingAddressModel.NewAddressPreselected = true;
+                        return Json(new
+                        {
+                            update_section = new UpdateSectionJsonModel
+                            {
+                                name = "return-shipping",
+                                html = await RenderPartialViewToStringAsync("OpcReturnShippingAddress", shippingAddressModel)
+                            }
+                        });
+                    }
+
+                    //try to find an address with the same values (don't duplicate records)
+                    var address = _addressService.FindAddress((await _customerService.GetAddressesByCustomerIdAsync(customer.Id)).ToList(),
+                        newAddress.FirstName, newAddress.LastName, newAddress.PhoneNumber,
+                        newAddress.Email, newAddress.FaxNumber, newAddress.Company,
+                        newAddress.Address1, newAddress.Address2, newAddress.City,
+                        newAddress.County, newAddress.StateProvinceId, newAddress.ZipPostalCode,
+                        newAddress.CountryId, customAttributes);
+
+                    if (address == null)
+                    {
+                        address = newAddress.ToEntity();
+                        address.CustomAttributes = customAttributes;
+                        address.CreatedOnUtc = DateTime.UtcNow;
+
+                        await _addressService.InsertAddressAsync(address);
+
+                        await _customerService.InsertCustomerAddressAsync(customer, address);
+                    }
+
+                    customer.ReturnShippingAddressId = address.Id;
+
+                    await _customerService.UpdateCustomerAsync(customer);
+                }
+
+                return await OpcLoadStepAfterReturnShippingAddress(cart);
             }
             catch (Exception exc)
             {

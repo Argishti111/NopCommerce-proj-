@@ -9,7 +9,7 @@
     NopHtml.SetActiveMenuItemSystemName("Customers list");
 }
 
-<form asp-controller="Customer" asp-action="Edit" method="post">
+<form asp-controller="Customer" asp-action="Edit" method="post" id="customer-form">
     <div class="content-header clearfix">
         <h1 class="float-left">
             @T("Admin.Customers.Customers.EditCustomerDetails") - @Model.LastName @Model.FirstName

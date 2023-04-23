@@ -847,6 +847,22 @@ namespace Nop.Web.Areas.Admin.Factories
                     model.AssociatedToProductName = parentGroupedProduct.Name;
                 }
 
+                //prepare available customer roles
+                var availableCustomers = await _customerService.GetAllCustomersAsync();
+
+                if (product.CustomerId != null)
+                {
+                    model.SelectedCustomerIds.Add(product.CustomerId??0);
+                }
+
+                model.AvailableCustomers = availableCustomers.Select(customer => new SelectListItem
+                {
+                    Text = customer.Email,
+                    Value = customer.Id.ToString(),
+                    Selected = customer.Id == product.CustomerId,
+                }).ToList();
+
+
                 model.LastStockQuantity = product.StockQuantity;
                 model.ProductTags = string.Join(", ", (await _productTagService.GetAllProductTagsByProductIdAsync(product.Id)).Select(tag => tag.Name));
                 model.ProductAttributesExist = (await _productAttributeService.GetAllProductAttributesAsync()).Any();

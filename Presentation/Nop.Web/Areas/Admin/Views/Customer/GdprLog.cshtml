@@ -13,7 +13,7 @@
     var hideSearchBlock = await genericAttributeService.GetAttributeAsync<bool>(await workContext.GetCurrentCustomerAsync(), hideSearchBlockAttributeName);
 }
 
-    <form asp-controller="Customer" asp-action="GdprLogList" method="post">
+<form asp-controller="Customer" asp-action="GdprLogList" method="post" id="customer-form">
         <div class="content-header clearfix">
             <h1 class="float-left">
                 @T("Admin.Customers.GdprLog")

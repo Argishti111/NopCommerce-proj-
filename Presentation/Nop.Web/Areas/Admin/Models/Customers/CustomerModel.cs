@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Catalog;
 using Nop.Web.Framework.Mvc.ModelBinding;
 using Nop.Web.Framework.Models;
+using Nop.Web.Areas.Admin.Models.Catalog;
 
 namespace Nop.Web.Areas.Admin.Models.Customers
 {
@@ -38,6 +39,8 @@ namespace Nop.Web.Areas.Admin.Models.Customers
             CustomerActivityLogSearchModel = new CustomerActivityLogSearchModel();
             CustomerBackInStockSubscriptionSearchModel = new CustomerBackInStockSubscriptionSearchModel();
             CustomerAssociatedExternalAuthRecordsSearchModel = new CustomerAssociatedExternalAuthRecordsSearchModel();
+
+            CustomerProductSearchModel = new CustomerProductSearchModel();
         }
 
         #endregion
@@ -252,7 +255,11 @@ namespace Nop.Web.Areas.Admin.Models.Customers
 
         public CustomerAssociatedExternalAuthRecordsSearchModel CustomerAssociatedExternalAuthRecordsSearchModel { get; set; }
 
+        public CustomerProductSearchModel CustomerProductSearchModel { get; set; }
+
+
         #endregion
+
 
         #region Nested classes
 

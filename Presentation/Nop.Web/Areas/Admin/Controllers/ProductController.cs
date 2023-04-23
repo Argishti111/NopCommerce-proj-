@@ -858,6 +858,7 @@ namespace Nop.Web.Areas.Admin.Controllers
 
                 //product
                 var product = model.ToEntity<Product>();
+                product.CustomerId = model.SelectedCustomerIds.FirstOrDefault();
                 product.CreatedOnUtc = DateTime.UtcNow;
                 product.UpdatedOnUtc = DateTime.UtcNow;
                 await _productService.InsertProductAsync(product);
@@ -931,6 +932,8 @@ namespace Nop.Web.Areas.Admin.Controllers
             //prepare model
             var model = await _productModelFactory.PrepareProductModelAsync(null, product);
 
+
+
             return View(model);
         }
 
@@ -980,7 +983,7 @@ namespace Nop.Web.Areas.Admin.Controllers
 
                 //product
                 product = model.ToEntity(product);
-
+                product.CustomerId = model.SelectedCustomerIds.FirstOrDefault();
                 product.UpdatedOnUtc = DateTime.UtcNow;
                 await _productService.UpdateProductAsync(product);
 

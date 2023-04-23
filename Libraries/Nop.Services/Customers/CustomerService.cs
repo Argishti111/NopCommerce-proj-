@@ -45,6 +45,7 @@ namespace Nop.Services.Customers
         private readonly IRepository<GenericAttribute> _gaRepository;
         private readonly IRepository<NewsComment> _newsCommentRepository;
         private readonly IRepository<Order> _orderRepository;
+        private readonly IRepository<Product> _productRepository;
         private readonly IRepository<ProductReview> _productReviewRepository;
         private readonly IRepository<ProductReviewHelpfulness> _productReviewHelpfulnessRepository;
         private readonly IRepository<PollVotingRecord> _pollVotingRecordRepository;
@@ -72,6 +73,7 @@ namespace Nop.Services.Customers
             IRepository<GenericAttribute> gaRepository,
             IRepository<NewsComment> newsCommentRepository,
             IRepository<Order> orderRepository,
+            IRepository<Product> productRepository,
             IRepository<ProductReview> productReviewRepository,
             IRepository<ProductReviewHelpfulness> productReviewHelpfulnessRepository,
             IRepository<PollVotingRecord> pollVotingRecordRepository,
@@ -95,6 +97,7 @@ namespace Nop.Services.Customers
             _gaRepository = gaRepository;
             _newsCommentRepository = newsCommentRepository;
             _orderRepository = orderRepository;
+            _productRepository = productRepository;
             _productReviewRepository = productReviewRepository;
             _productReviewHelpfulnessRepository = productReviewHelpfulnessRepository;
             _pollVotingRecordRepository = pollVotingRecordRepository;
@@ -1672,6 +1675,37 @@ namespace Nop.Services.Customers
         }
 
         #endregion
+
+        #endregion
+
+        #region Customer product mapping
+
+        /// <summary>
+        /// Gets product customer mapping collection
+        /// </summary>
+        /// <param name="customerId">Customer identifier</param>
+        /// <param name="pageIndex">Page index</param>
+        /// <param name="pageSize">Page size</param>
+        /// <param name="showHidden">A value indicating whether to show hidden records</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the product a category mapping collection
+        /// </returns>
+        public virtual async Task<IPagedList<Product>> GetProductCustomerByCustomerIdAsync(int customerId,
+            int pageIndex = 0, int pageSize = int.MaxValue, bool showHidden = false)
+        {
+            if (customerId == 0)
+                return new PagedList<Product>(new List<Product>(), pageIndex, pageSize);
+
+            var query = from p in _productRepository.Table
+                        where p.CustomerId == customerId && !p.Deleted
+                        orderby p.DisplayOrder, p.Id
+                        select p;
+
+            return await query.ToPagedListAsync(pageIndex, pageSize);
+        }
+
+        
 
         #endregion
     }

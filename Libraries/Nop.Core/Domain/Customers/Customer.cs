@@ -239,6 +239,11 @@ namespace Nop.Core.Domain.Customers
         /// </summary>
         public int? ShippingAddressId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the shipping address identifier
+        /// </summary>
+        public int? ReturnShippingAddressId { get; set; }
+
         #region Custom properties
 
         /// <summary>

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
+using Nop.Web.Areas.Admin.Models.Catalog;
 using Nop.Web.Areas.Admin.Models.Customers;
 
 namespace Nop.Web.Areas.Admin.Factories
@@ -163,5 +164,37 @@ namespace Nop.Web.Areas.Admin.Factories
         /// The task result contains the gDPR request list model
         /// </returns>
         Task<GdprLogListModel> PrepareGdprLogListModelAsync(GdprLogSearchModel searchModel);
+
+
+        /// <summary>
+        /// Prepare paged customer product list model
+        /// </summary>
+        /// <param name="searchModel">Customer product search model</param>
+        /// <param name="customer">Customer</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the category product list model
+        /// </returns>
+        Task<CustomerProductListModel> PrepareCustomerProductListModelAsync(CustomerProductSearchModel searchModel, Customer customer);
+
+        /// <summary>
+        /// Prepare product search model to add to the customer
+        /// </summary>
+        /// <param name="searchModel">Product search model to add to the customer</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the product search model to add to the customer
+        /// </returns>
+        Task<AddProductToCustomerSearchModel> PrepareAddProductToCustomerSearchModelAsync(AddProductToCustomerSearchModel searchModel);
+
+        /// <summary>
+        /// Prepare paged product list model to add to the customer
+        /// </summary>
+        /// <param name="searchModel">Product search model to add to the customer</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the product list model to add to the customer
+        /// </returns>
+        Task<AddProductToCustomerListModel> PrepareAddProductToCustomerListModelAsync(AddProductToCustomerSearchModel searchModel);
     }
 }

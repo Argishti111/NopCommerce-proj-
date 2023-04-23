@@ -45,6 +45,7 @@ namespace Nop.Data.Mapping.Builders.Customers
                 .WithColumn(nameof(Customer.LanguageId)).AsInt32().ForeignKey<Language>(onDelete: Rule.SetNull).Nullable()
                 .WithColumn(NameCompatibilityManager.GetColumnName(typeof(Customer), nameof(Customer.BillingAddressId))).AsInt32().ForeignKey<Address>(onDelete: Rule.None).Nullable()
                 .WithColumn(NameCompatibilityManager.GetColumnName(typeof(Customer), nameof(Customer.ShippingAddressId))).AsInt32().ForeignKey<Address>(onDelete: Rule.None).Nullable();
+                //.WithColumn(NameCompatibilityManager.GetColumnName(typeof(Customer), nameof(Customer.ReturnShippingAddressId))).AsInt32().ForeignKey<Address>(onDelete: Rule.None).Nullable();
         }
 
         #endregion
