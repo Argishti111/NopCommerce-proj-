@@ -49,6 +49,7 @@ namespace Nop.Web.Controllers
         private readonly VendorSettings _vendorSettings;
 
         #endregion
+        
 
         #region Ctor
 
