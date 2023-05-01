@@ -8,9 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="358fe085-3562-41c4-90c6-fce78992bb5f" name="Changes" comment="add .idea to gitignore">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.NopCommerce/.idea/projectSettingsUpdater.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.NopCommerce/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Presentation/Nop.Web/Controllers/VendorController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Presentation/Nop.Web/Controllers/VendorController.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +31,14 @@
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="false" />
   <component name="TaskManager">
+    <task id="LOCAL-00001" summary="add .idea to gitignore">
+      <created>1682953163709</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1682953163709</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="UnityCheckinConfiguration" checkUnsavedScenes="false" />
