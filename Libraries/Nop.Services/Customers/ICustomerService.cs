@@ -623,6 +623,16 @@ namespace Nop.Services.Customers
         /// The task result contains the result
         /// </returns>
         Task<Address> GetCustomerShippingAddressAsync(Customer customer);
+        
+        /// <summary>
+        /// Gets a customer return shipping address
+        /// </summary>
+        /// <param name="customer">Customer</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the result
+        /// </returns>
+        Task<Address> GetCustomerReturnShippingAddressAsync(Customer customer);
 
         /// <summary>
         /// Remove a customer-address mapping record

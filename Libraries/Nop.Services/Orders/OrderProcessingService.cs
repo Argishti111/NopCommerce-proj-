@@ -644,14 +644,23 @@ namespace Nop.Services.Orders
                     if (details.Customer.ShippingAddressId == null)
                         throw new NopException("Shipping address is not provided");
 
+                    if (details.Customer.ReturnShippingAddressId == null)
+                        throw new NopException("Return Shipping address is not provided");
+
                     var shippingAddress = await _customerService.GetCustomerShippingAddressAsync(details.Customer);
 
-                    if (!CommonHelper.IsValidEmail(shippingAddress?.Email))
+                    var returnShippingAddress = await _customerService.GetCustomerReturnShippingAddressAsync(details.Customer);
+
+
+                    if (!CommonHelper.IsValidEmail(shippingAddress?.Email) || !CommonHelper.IsValidEmail(returnShippingAddress?.Email))
                         throw new NopException("Email is not valid");
 
                     //clone shipping address
                     details.ShippingAddress = _addressService.CloneAddress(shippingAddress);
+                    details.ReturnShippingAddress = _addressService.CloneAddress(returnShippingAddress);
 
+                    
+                    //change later 
                     if (await _countryService.GetCountryByAddressAsync(details.ShippingAddress) is Country shippingCountry && !shippingCountry.AllowsShipping)
                         throw new NopException($"Country '{shippingCountry.Name}' is not allowed for shipping");
                 }
@@ -985,6 +994,12 @@ namespace Nop.Services.Orders
             {
                 await _addressService.InsertAddressAsync(details.ShippingAddress);
                 order.ShippingAddressId = details.ShippingAddress.Id;
+            }
+            
+            if (details.ReturnShippingAddress != null)
+            {
+                await _addressService.InsertAddressAsync(details.ReturnShippingAddress);
+                order.ReturnShippingAddressId = details.ReturnShippingAddress.Id;
             }
 
             await _orderService.InsertOrderAsync(order);

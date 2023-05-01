@@ -283,9 +283,16 @@ namespace Nop.Web.Factories
                 if (!order.PickupInStore)
                 {
                     var shippingAddress = await _addressService.GetAddressByIdAsync(order.ShippingAddressId ?? 0);
+                    
+                    var returnShippingAddress = await _addressService.GetAddressByIdAsync(order.ReturnShippingAddressId ?? 0);
 
                     await _addressModelFactory.PrepareAddressModelAsync(model.ShippingAddress,
                         address: shippingAddress,
+                        excludeProperties: false,
+                        addressSettings: _addressSettings);
+                    
+                    await _addressModelFactory.PrepareAddressModelAsync(model.ReturnShippingAddress,
+                        address: returnShippingAddress,
                         excludeProperties: false,
                         addressSettings: _addressSettings);
                 }

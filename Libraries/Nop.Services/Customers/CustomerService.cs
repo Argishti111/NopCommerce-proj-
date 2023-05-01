@@ -1673,6 +1673,22 @@ namespace Nop.Services.Customers
 
             return await GetCustomerAddressAsync(customer.Id, customer.ShippingAddressId ?? 0);
         }
+        
+        /// <summary>
+        /// Gets a customer return shipping address
+        /// </summary>
+        /// <param name="customer">Customer</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation
+        /// The task result contains the result
+        /// </returns>
+        public virtual async Task<Address> GetCustomerReturnShippingAddressAsync(Customer customer)
+        {
+            if (customer is null)
+                throw new ArgumentNullException(nameof(customer));
+
+            return await GetCustomerAddressAsync(customer.Id, customer.ReturnShippingAddressId ?? 0);
+        }
 
         #endregion
 
