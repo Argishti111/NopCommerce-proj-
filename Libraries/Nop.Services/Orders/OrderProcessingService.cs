@@ -242,9 +242,19 @@ namespace Nop.Services.Orders
             public Address ShippingAddress { get; set; }
 
             /// <summary>
+            /// Return Shipping address
+            /// </summary>
+            public Address ReturnShippingAddress { get; set; }
+
+            /// <summary>
             /// Shipping status
             /// </summary>
             public ShippingStatus ShippingStatus { get; set; }
+
+            /// <summary>
+            /// Return Shipping status
+            /// </summary>
+            public ShippingStatus ReturnShippingStatus { get; set; }
 
             /// <summary>
             /// Selected shipping method

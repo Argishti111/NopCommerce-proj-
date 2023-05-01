@@ -92,6 +92,9 @@ var Checkout = {
       if ($("#shipping-address-select").length > 0) {
         Shipping.newAddress(response.selected_id == undefined ? $('#shipping-address-select').val() : response.selected_id, $('#billing-address-select').children("option:selected").val());
       }
+      if ($("#return-shipping-address-select").length > 0) {
+        Shipping.newAddress(response.selected_id == undefined ? $('#return-shipping-address-select').val() : response.selected_id, $('#shipping-method-select').children("option:selected").val());
+      }
 
       if (response.goto_section) {
         Checkout.gotoSection(response.goto_section);
@@ -510,6 +513,200 @@ var Shipping = {
       $('.address-id', '#shipping-new-address-form').val('0');
       $('select option[value="0"]', '#shipping-new-address-form').prop('selected', true);
     }
+};
+
+var ReturnShipping = {
+  form: false,
+  saveUrl: false,
+
+  init: function (form, saveUrl) {
+    this.form = form;
+    this.saveUrl = saveUrl;
+  },
+
+  newAddress: function (id, billingAddressId) {
+    isNew = !id;
+    if (isNew) {
+      this.resetSelectedAddress();
+      $('#return-shipping-new-address-form').show();
+      $('#edit-return-shipping-address-button').hide();
+      $('#delete-return-shipping-address-button').hide();
+    } else {
+      $('#return-shipping-new-address-form').hide();
+      if (id == billingAddressId || (id != undefined && billingAddressId == undefined)) {
+        $('#edit-return-shipping-address-button').hide();
+        $("#save-return-shipping-address-button").hide();
+        $('#delete-return-shipping-address-button').hide();
+      } else {
+        $("#save-return-shipping-address-button").hide();
+        $('#edit-return-shipping-address-button').show();
+        $('#delete-return-shipping-address-button').show();
+      }
+    }
+    $(document).trigger({ type: "onepagecheckout_return_shipping_address_new" });
+    Shipping.initializeCountrySelect();
+  },
+
+  resetSelectedAddress: function () {
+    var selectElement = $('#return-shipping-address-select');
+    if (selectElement) {
+      selectElement.val('');
+    }
+    $(document).trigger({ type: "onepagecheckout_return_shipping_address_reset" });
+  },
+
+  editAddress: function (url) {
+    Shipping.resetShippingForm();
+
+    var prefix = 'ReturnShippingNewAddress_';
+    var selectedItem = $('#return-shipping-address-select').children("option:selected").val();
+    $.ajax({
+      cache: false,
+      type: "GET",
+      url: url,
+      data: {
+        addressId: selectedItem,
+      },
+      success: function (data, textStatus, jqXHR) {
+        $.each(data, function (id, value) {
+          if (value === null)
+            return;
+
+          if (id.indexOf("CustomAddressAttributes") >= 0 && Array.isArray(value)) {
+            $.each(value, function (i, customAttribute) {
+              if (customAttribute.DefaultValue) {
+                $(`#${customAttribute.ControlId}`).val(
+                  customAttribute.DefaultValue
+                );
+              } else {
+                $.each(customAttribute.Values, function (j, attributeValue) {
+                  if (attributeValue.IsPreSelected) {
+                    $(`#${customAttribute.ControlId}`).val(attributeValue.Id);
+                    $(
+                      `#${customAttribute.ControlId}_${attributeValue.Id}`
+                    ).prop("checked", attributeValue.Id);
+                  }
+                });
+              }
+            });
+
+            return;
+          }
+
+          var val = $(`#${prefix}${id}`).val(value);
+          if (id.indexOf("CountryId") >= 0) {
+            val.trigger("change");
+          }
+          if (id.indexOf("StateProvinceId") >= 0) {
+            Billing.setSelectedStateId(value);
+          }
+        });
+      },
+      complete: function (jqXHR, textStatus) {
+        $("#return-shipping-new-address-form").show();
+        $("#edit-return-shipping-address-button").hide();
+        $("#delete-return-shipping-address-button").hide();
+        $("#save-return-shipping-address-button").show();
+      },
+      error: Checkout.ajaxFailure,
+    });
+  },
+
+  saveEditAddress: function (url) {
+    var selectedId;
+    $.ajax({
+      cache: false,
+      url: url + '?opc=true',
+      data: $(this.form).serialize(),
+      type: "POST",
+      success: function (response) {
+        if (response.error) {
+          alert(response.message);
+          return false;
+        } else {
+          selectedId = response.selected_id;
+          Checkout.setStepResponse(response);
+          Shipping.resetShippingForm();
+        }
+      },
+      complete: function () {
+        var selectElement = $('#return-shipping-address-select');
+        if (selectElement && selectedId) {
+          selectElement.val(selectedId);
+        }
+      },
+      error: Checkout.ajaxFailure
+    });
+  },
+
+  deleteAddress: function (url) {
+    var selectedAddress = $('#return-shipping-address-select').children("option:selected").val();
+    $.ajax({
+      cache: false,
+      type: "GET",
+      url: url,
+      data: {
+        "addressId": selectedAddress,
+        "opc": 'true'
+      },
+      success: function (response) {
+        Checkout.setStepResponse(response);
+      },
+      error: Checkout.ajaxFailure
+    });
+  },
+
+  save: function () {
+    if (Checkout.loadWaiting !== false) return;
+
+    Checkout.setLoadWaiting('return-shipping');
+
+    $.ajax({
+      cache: false,
+      url: this.saveUrl,
+      data: $(this.form).serialize(),
+      type: "POST",
+      success: this.nextStep,
+      complete: this.resetLoadWaiting,
+      error: Checkout.ajaxFailure
+    });
+  },
+
+  resetLoadWaiting: function () {
+    Checkout.setLoadWaiting(false);
+  },
+
+  nextStep: function (response) {
+    if (response.error) {
+      if (typeof response.message === 'string') {
+        alert(response.message);
+      } else {
+        alert(response.message.join("\n"));
+      }
+
+      return false;
+    }
+
+    Checkout.setStepResponse(response);
+  },
+
+  initializeCountrySelect: function () {
+    if ($('#opc-shipping').has('select[data-trigger="country-select"]')) {
+      $('#opc-shipping select[data-trigger="country-select"]').countrySelect();
+    }
+  },
+
+  resetShippingForm: function () {
+    $(':input', '#shipping-new-address-form')
+      .not(':button, :submit, :reset, :hidden')
+      .removeAttr('checked').removeAttr('selected')
+    $(':input', '#shipping-new-address-form')
+      .not(':checkbox, :radio, select')
+      .val('');
+
+    $('.address-id', '#shipping-new-address-form').val('0');
+    $('select option[value="0"]', '#shipping-new-address-form').prop('selected', true);
+  }
 };
 
 

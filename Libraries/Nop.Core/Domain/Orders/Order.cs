@@ -39,6 +39,11 @@ namespace Nop.Core.Domain.Orders
         public int? ShippingAddressId { get; set; }
 
         /// <summary>
+        /// Gets or sets the return shipping address identifier
+        /// </summary>
+        public int? ReturnShippingAddressId { get; set; }
+
+        /// <summary>
         /// Gets or sets the pickup address identifier
         /// </summary>
         public int? PickupAddressId { get; set; }
